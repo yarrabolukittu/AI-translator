@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dhurva AI Translator</title>
+
+<style>
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    transition: background 1s ease;
+    color: white;
+}
+
+/* Container */
+.container {
+    width: 600px;
+    margin: 60px auto;
+    background: rgba(0,0,0,0.65);
+    padding: 25px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* Title */
+h2 {
+    text-align: center;
+}
+
+/* Textarea */
+textarea {
+    width: 100%;
+    height: 120px;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    font-size: 15px;
+    background: rgba(255,255,255,0.1);
+    color: white;
+}
+
+textarea::placeholder {
+    color: #ccc;
+}
+
+/* Row */
+.row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+/* FIXED DROPDOWN */
+select {
+    width: 48%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    background: white;
+    color: black;
+}
+
+/* Options */
+option {
+    color: black;
+    background: white;
+}
+
+/* Button */
+button {
+    width: 100%;
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: white;
+    background: linear-gradient(45deg, #ff416c, #ff4b2b);
+    transition: 0.3s;
+}
+
+button:hover {
+    transform: scale(1.05);
+}
+
+/* Output */
+.output {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+}
+
+/* Speak button */
+.speak-btn {
+    background: linear-gradient(45deg, #36d1dc, #5b86e5);
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>🌍 Dhurva AI Translator</h2>
+
+    {% if error %}
+        <p style="color:red;">{{ error }}</p>
+    {% endif %}
+
+    <form action="/translate" method="post">
+        <textarea name="text" placeholder="Enter text...">{{ original_text if original_text else '' }}</textarea>
+
+        <div class="row">
+            <select name="source">
+                {% for code, name in languages.items() %}
+                    <option value="{{code}}" {% if code == src_lang %}selected{% endif %}>{{name}}</option>
+                {% endfor %}
+            </select>
+
+            <select name="target">
+                {% for code, name in languages.items() %}
+                    <option value="{{code}}" {% if code == dest_lang %}selected{% endif %}>{{name}}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit">Translate</button>
+    </form>
+
+    {% if translated_text %}
+        <div class="output">
+            <strong>Translated:</strong>
+            <p id="translatedText" data-lang="{{dest_lang}}">
+                {{ translated_text }}
+            </p>
+
+            <!-- 🔊 SPEAK BUTTON (gTTS version) -->
+            <button class="speak-btn" onclick="speakText()">🔊 Speak</button>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+// 🔊 SPEAK USING BACKEND (gTTS)
+function speakText() {
+    let textEl = document.getElementById("translatedText");
+
+    if (!textEl) {
+        alert("No text to speak!");
+        return;
+    }
+
+    let text = textEl.innerText;
+    let lang = textEl.getAttribute("data-lang");
+
+    fetch("/speak", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: `text=${encodeURIComponent(text)}&lang=${lang}`
+    })
+    .then(res => res.blob())
+    .then(blob => {
+        let audio = new Audio(URL.createObjectURL(blob));
+        audio.play();
+    });
+}
+
+// 🌈 BACKGROUND COLOR CHANGE
+const gradients = [
+    "linear-gradient(135deg, #1f1c2c, #928dab)",
+    "linear-gradient(135deg, #ff416c, #ff4b2b)",
+    "linear-gradient(135deg, #36d1dc, #5b86e5)",
+    "linear-gradient(135deg, #11998e, #38ef7d)",
+    "linear-gradient(135deg, #fc466b, #3f5efb)"
+];
+
+let i = 0;
+
+setInterval(() => {
+    document.body.style.background = gradients[i];
+    i = (i + 1) % gradients.length;
+}, 10000);
+</script>
+
+</body>
+</html>
