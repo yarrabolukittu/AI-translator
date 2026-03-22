@@ -20,29 +20,47 @@ def home():
 
 @app.route("/translate", methods=["POST"])
 def translate():
-    text = request.form.get("text", "")
-    src = request.form.get("source", "auto")
-    dest = request.form.get("target", "en")
+    try:
+        text = request.form.get("text", "").strip()
+        src = request.form.get("source", "auto")
+        dest = request.form.get("target", "en")
 
-    translated = GoogleTranslator(source=src, target=dest).translate(text)
+        if not text:
+            return render_template("index.html", languages=languages, error="Enter text")
 
-    return render_template("index.html",
-                           languages=languages,
-                           translated_text=translated,
-                           original_text=text,
-                           dest_lang=dest)
+        translated = GoogleTranslator(source=src, target=dest).translate(text)
 
-# 🔊 NEW SPEAK ROUTE
+        return render_template(
+            "index.html",
+            languages=languages,
+            translated_text=translated,
+            original_text=text,
+            src_lang=src,
+            dest_lang=dest
+        )
+
+    except Exception as e:
+        return render_template("index.html", languages=languages, error=str(e))
+
+
+# 🔊 SPEAK ROUTE (gTTS)
 @app.route("/speak", methods=["POST"])
 def speak():
     text = request.form.get("text")
     lang = request.form.get("lang", "en")
 
+    # gTTS language fix
+    if lang == "zh-cn":
+        lang = "zh-CN"
+
     tts = gTTS(text=text, lang=lang)
     filename = "voice.mp3"
     tts.save(filename)
 
-    return send_file(filename, as_attachment=False)
+    return send_file(filename, mimetype="audio/mpeg")
 
+
+# 🚀 IMPORTANT FOR RENDER
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
